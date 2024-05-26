@@ -9,8 +9,8 @@
 
 1. **Installing Ubuntu:**
 - Text2Mesh requires Ubuntu: Install [FocalFossa 20.04](https://releases.ubuntu.com/focal/ubuntu-20.04.6-desktop-amd64.iso).
-- Use a USB to mount that to a USB
-    - Use [Rufus](https://rufus.ie/en)
+- Use some iso software to mount that iso to a USB.
+    - I recommend using [Rufus](https://rufus.ie/en).
     - Requires a USB with ≥4GB, but use a ≥16GB drive for easiest installation.
 - Create a partition on your device to hold Ubuntu, you shouldn't need more than 64GB for the entire project.
 - Make sure to enable proprietary drivers on installation.
@@ -45,7 +45,9 @@
     sudo apt-get install g++freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev libomp-dev
 
     sudo reboot
+    ```
 
+    ```bash
     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
     sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
     sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub ## This ________.pub file may be incorrect, the next line will tell you if the wrong pub key is being used. Just replace this 8 keyed pubkey with the last 8 of the suggested pub key in the log. Ex. Mine was 3bf863cc
@@ -77,15 +79,15 @@
         ```
 
 4. **Installing Miniconda:**
-```bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
+    ```bash
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
 
-## Follow prompts to complete installation, make sure to enter yes for both prompts
-source ~/.bashrc
-```
+    ## Follow prompts to complete installation, make sure to enter yes for both prompts
+    source ~/.bashrc
+    ```
 
-**Note:** The below installation will fail if run on something other than a CUDA GPU machine.
+5. **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
 ```bash
 cd text2mesh
 conda env create --file text2mesh.yml
