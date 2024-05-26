@@ -7,8 +7,87 @@
 ## Getting Started
 ### Installation
 
-**Note:** The below installation will fail if run on something other than a CUDA GPU machine.
+1. **Installing Ubuntu:**
+- Text2Mesh requires Ubuntu: Install [FocalFossa 20.04](https://releases.ubuntu.com/focal/ubuntu-20.04.6-desktop-amd64.iso).
+- Use a USB to mount that to a USB
+    - Use [Rufus](https://rufus.ie/en)
+    - Requires a USB with ≥4GB, but use a ≥16GB drive for easiest installation.
+- Create a partition on your device to hold Ubuntu, you shouldn't need more than 64GB for the entire project.
+- Make sure to enable proprietary drivers on installation.
+
+2. **Setting Up Environment:**
+- After installation:
+    ```bash
+    sudo apt update
+    sudo apt upgrade -y
+    sudo reboot
+    ```
+- After reboot:
+    ```bash
+    sudo apt install -y git python3 python3-pip gcc
+    git clone https://github.com/threedle/text2mesh.git
+    git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
+    ```
+
+3. **Installing CUDA-11.3:**
+- Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#ubuntu).
+
+- Removing existing CUDA:
+    ```bash
+    sudo apt --purge remove "cublas*" "cuda*"
+    sudo apt --purge remove "nvidia*"
+    rm -rf /usr/local/cuda*
+    sudo apt-get autoremove && sudo apt-get autoclean
+    sudo reboot
+    ```
+- Downloading specific CUDA-11.3 version:
+    ```bash
+    sudo apt-get install g++freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev libomp-dev
+
+    sudo reboot
+
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+    sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub ## This ________.pub file may be incorrect, the next line will tell you if the wrong pub key is being used. Just replace this 8 keyed pubkey with the last 8 of the suggested pub key in the log. Ex. Mine was 3bf863cc
+    sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+    sudo apt-get update
+    sudo apt-get -y install cuda-11.3
+
+    sudo reboot
+    ```
+- Set Env Vars
+    ```bash
+    echo 'export PATH=/usr/local/cuda-11.3/bin:$PATH' >> ~/.bashrc
+    echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+    ```
+
+- Install CuDNN:
+    - Download [CuDNN](https://developer.nvidia.com/rdp/cudnn-archive).
+    - You want v8.2.1 (June 7th, 2021) for Cuda 11.x
+    - Download *cuDNN Library for Linux (x86_64)*
+    - In the folder where you downloaded that tarball...
+        ```bash
+        tar -xzvf ((filename)).tgz ## Just press tab after tar -xzvf 
+
+        sudo cp -P cuda/include/cudnn.h /usr/local/cuda-11.3/include
+        sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-11.3/lib64/
+        sudo chmod a+r /usr/local/cuda-11.3/lib64/libcudnn*
+
+        nvcc -V ## Check to make install worked.
+        ```
+
+4. **Installing Miniconda:**
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+## Follow prompts to complete installation, make sure to enter yes for both prompts
+source ~/.bashrc
 ```
+
+**Note:** The below installation will fail if run on something other than a CUDA GPU machine.
+```bash
+cd text2mesh
 conda env create --file text2mesh.yml
 conda activate text2mesh
 ```
