@@ -14,6 +14,7 @@
     - Requires a USB with ≥4GB, but use a ≥16GB drive for easiest installation.
 - Create a partition on your device to hold Ubuntu, you shouldn't need more than 64GB for the entire project.
 - Make sure to enable proprietary drivers on installation.
+- [Here](https://www.youtube.com/watch?v=GXxTxBPKecQ&themeRefresh=1) is a link to a good side-load installation video.
 
 2. **Setting Up Environment:**
 - After installation:
@@ -26,15 +27,22 @@
     ```bash
     sudo apt install -y git python3 python3-pip gcc
     git clone https://github.com/randalhucker/text2mesh
-    git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
     ```
 
 3. **Installing CUDA-11.3:**
 - Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
 
-- For step 3.9.3, the desired distro/arch is *ubuntu2004/x86_64*.
+- For step 3.9.3: The desired distro/arch is *ubuntu2004/x86_64*.
 
-3.5. **Getting Correct CUDA Version:**
+- For step 3.9.4: 
+    ```bash
+    sudo apt-get install cuda-toolkit-11.3
+    ```
+- For Post-install Actions:
+    - Make sure to run 13.1.1.
+    - Also run the *Ubuntu* section of 13.3.1.
+
+3.5. **If you have any version of CUDA besides 11.3:**
 
 - Removing existing CUDA:
     ```bash
@@ -50,6 +58,8 @@
 
     sudo reboot
     ```
+
+4. **Installing the rest of CUDA 11.3:** 
 
     ```bash
     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
@@ -84,7 +94,7 @@
 
 4. **Installing Miniconda:**
     ```bash
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-linux-x86_64.sh
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
 
     ## Follow prompts to complete installation, make sure to enter yes for both prompts
@@ -92,12 +102,25 @@
     ```
 
 5. **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
+- In a new terminal:
+    ```bash
+    git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
+    cd kaolin
+    pip install -r tools/build_requirements.txt -r tools/viz_requirements.txt -r tools/requirements.txt
+    python setup.py develop
+
+    ## Test your install
+    python -c "import kaolin; print(kaolin.__version__)"
+
+    sudo reboot
+    ```
 
     ```bash
     cd text2mesh
     conda env create --file text2mesh.yml
     conda activate text2mesh
     ```
+
 If you experience an error installing kaolin saying something like `nvcc not found`, you may need to set your `CUDA_HOME` environment variable to the 11.3 folder i.e. `export CUDA_HOME=/usr/local/cuda-11.3`, then rerunning the installation. 
 
 ### System Requirements
