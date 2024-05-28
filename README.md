@@ -128,6 +128,7 @@
     ```bash
     cd text2mesh
     conda env create --file text2mesh.yml
+    sudo reboot
     conda activate text2mesh
     ```
 
