@@ -27,7 +27,7 @@
         ```bash
         sudo apt install -y git python3 python3-pip gcc
         git clone https://github.com/randalhucker/text2mesh
-    ```
+        ```
 
 3. **Installing CUDA-11.3:**
     - Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
@@ -38,6 +38,7 @@
         ```bash
         sudo apt-get install cuda-toolkit-11.3
         ```
+    
     - For Post-install Actions:
         - Make sure to run 13.1.1.
         - Also run the *Ubuntu* section of 13.3.1.
@@ -45,6 +46,7 @@
 3.5. **If you have any version of CUDA besides 11.3:**
 
     - Removing existing CUDA:
+
         ```bash
         sudo apt --purge remove "cublas*" "cuda*"
         sudo apt --purge remove "nvidia*"
@@ -52,7 +54,9 @@
         sudo apt-get autoremove && sudo apt-get autoclean
         sudo reboot
         ```
+
     - Downloading specific CUDA-11.3 version:
+
         ```bash
         sudo apt-get install g++freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev libomp-dev
 
@@ -61,16 +65,16 @@
 
 4. **Installing the rest of CUDA 11.3:** 
 
-    ```bash
-    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
-    sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub ## This ________.pub file may be incorrect, the next line will tell you if the wrong pub key is being used. Just replace this 8 keyed pubkey with the last 8 of the suggested pub key in the log. Ex. Mine was 3bf863cc
-    sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
-    sudo apt-get update
-    sudo apt-get -y install cuda-11.3
+        ```bash
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+        sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub ## This ________.pub file may be incorrect, the next line will tell you if the wrong pub key is being used. Just replace this 8 keyed pubkey with the last 8 of the suggested pub key in the log. Ex. Mine was 3bf863cc
+        sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+        sudo apt-get update
+        sudo apt-get -y install cuda-11.3
 
-    sudo reboot
-    ```
+        sudo reboot
+        ```
 
     - Set Env Vars
         ```bash
@@ -120,6 +124,8 @@
         sudo reboot
         ```
 
+    - Finally:
+    
     ```bash
     cd text2mesh
     conda env create --file text2mesh.yml
