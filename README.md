@@ -75,6 +75,10 @@
     ```bash
     echo 'export PATH=/usr/local/cuda-11.3/bin:$PATH' >> ~/.bashrc
     echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+
+    export CUDA_HOME=/usr/local/cuda-11.3
+    export PATH=$CUDA_HOME/bin:$PATH
+    source ~/.bashrc
     ```
 
 - Install CuDNN:
