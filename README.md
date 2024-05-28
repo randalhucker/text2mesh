@@ -25,7 +25,7 @@
 - After reboot:
     ```bash
     sudo apt install -y git python3 python3-pip gcc
-    git clone https://github.com/threedle/text2mesh.git
+    git clone https://github.com/randalhucker/text2mesh
     git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
     ```
 
