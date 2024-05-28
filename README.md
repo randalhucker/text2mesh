@@ -8,56 +8,56 @@
 ### Installation
 
 1. **Installing Ubuntu:**
-- Text2Mesh requires Ubuntu: Install [FocalFossa 20.04](https://releases.ubuntu.com/focal/ubuntu-20.04.6-desktop-amd64.iso).
-- Use some iso software to mount that iso to a USB.
-    - I recommend using [Rufus](https://rufus.ie/en).
-    - Requires a USB with ≥4GB, but use a ≥16GB drive for easiest installation.
-- Create a partition on your device to hold Ubuntu, you shouldn't need more than 64GB for the entire project.
-- Make sure to enable proprietary drivers on installation.
-- [Here](https://www.youtube.com/watch?v=GXxTxBPKecQ&themeRefresh=1) is a link to a good side-load installation video.
+    - Text2Mesh requires Ubuntu: Install [FocalFossa 20.04](https://releases.ubuntu.com/focal/ubuntu-20.04.6-desktop-amd64.iso).
+    - Use some iso software to mount that iso to a USB.
+        - I recommend using [Rufus](https://rufus.ie/en).
+        - Requires a USB with ≥4GB, but use a ≥16GB drive for easiest installation.
+    - Create a partition on your device to hold Ubuntu, you shouldn't need more than 64GB for the entire project.
+    - Make sure to enable proprietary drivers on installation.
+    - [Here](https://www.youtube.com/watch?v=GXxTxBPKecQ&themeRefresh=1) is a link to a good side-load installation video.
 
 2. **Setting Up Environment:**
-- After installation:
-    ```bash
-    sudo apt update
-    sudo apt upgrade -y
-    sudo reboot
-    ```
-- After reboot:
-    ```bash
-    sudo apt install -y git python3 python3-pip gcc
-    git clone https://github.com/randalhucker/text2mesh
+    - After installation:
+        ```bash
+        sudo apt update
+        sudo apt upgrade -y
+        sudo reboot
+        ```
+    - After reboot:
+        ```bash
+        sudo apt install -y git python3 python3-pip gcc
+        git clone https://github.com/randalhucker/text2mesh
     ```
 
 3. **Installing CUDA-11.3:**
-- Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
+    - Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
 
-- For step 3.9.3: The desired distro/arch is *ubuntu2004/x86_64*.
+    - For step 3.9.3: The desired distro/arch is *ubuntu2004/x86_64*.
 
-- For step 3.9.4: 
-    ```bash
-    sudo apt-get install cuda-toolkit-11.3
-    ```
-- For Post-install Actions:
-    - Make sure to run 13.1.1.
-    - Also run the *Ubuntu* section of 13.3.1.
+    - For step 3.9.4: 
+        ```bash
+        sudo apt-get install cuda-toolkit-11.3
+        ```
+    - For Post-install Actions:
+        - Make sure to run 13.1.1.
+        - Also run the *Ubuntu* section of 13.3.1.
 
 3.5. **If you have any version of CUDA besides 11.3:**
 
-- Removing existing CUDA:
-    ```bash
-    sudo apt --purge remove "cublas*" "cuda*"
-    sudo apt --purge remove "nvidia*"
-    rm -rf /usr/local/cuda*
-    sudo apt-get autoremove && sudo apt-get autoclean
-    sudo reboot
-    ```
-- Downloading specific CUDA-11.3 version:
-    ```bash
-    sudo apt-get install g++freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev libomp-dev
+    - Removing existing CUDA:
+        ```bash
+        sudo apt --purge remove "cublas*" "cuda*"
+        sudo apt --purge remove "nvidia*"
+        rm -rf /usr/local/cuda*
+        sudo apt-get autoremove && sudo apt-get autoclean
+        sudo reboot
+        ```
+    - Downloading specific CUDA-11.3 version:
+        ```bash
+        sudo apt-get install g++freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev libomp-dev
 
-    sudo reboot
-    ```
+        sudo reboot
+        ```
 
 4. **Installing the rest of CUDA 11.3:** 
 
@@ -71,30 +71,31 @@
 
     sudo reboot
     ```
-- Set Env Vars
-    ```bash
-    echo 'export PATH=/usr/local/cuda-11.3/bin:$PATH' >> ~/.bashrc
-    echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
 
-    export CUDA_HOME=/usr/local/cuda-11.3
-    export PATH=$CUDA_HOME/bin:$PATH
-    source ~/.bashrc
-    ```
-
-- Install CuDNN:
-    - Download [CuDNN](https://developer.nvidia.com/rdp/cudnn-archive).
-    - You want v8.2.1 (June 7th, 2021) for Cuda 11.x
-    - Download *cuDNN Library for Linux (x86_64)*
-    - In the folder where you downloaded that tarball...
+    - Set Env Vars
         ```bash
-        tar -xzvf ((filename)).tgz ## Just press tab after tar -xzvf 
+        echo 'export PATH=/usr/local/cuda-11.3/bin:$PATH' >> ~/.bashrc
+        echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
 
-        sudo cp -P cuda/include/cudnn.h /usr/local/cuda-11.3/include
-        sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-11.3/lib64/
-        sudo chmod a+r /usr/local/cuda-11.3/lib64/libcudnn*
-
-        nvcc -V ## Check to make install worked.
+        export CUDA_HOME=/usr/local/cuda-11.3
+        export PATH=$CUDA_HOME/bin:$PATH
+        source ~/.bashrc
         ```
+
+    - Install CuDNN:
+        - Download [CuDNN](https://developer.nvidia.com/rdp/cudnn-archive).
+        - You want v8.2.1 (June 7th, 2021) for Cuda 11.x
+        - Download *cuDNN Library for Linux (x86_64)*
+        - In the folder where you downloaded that tarball...
+            ```bash
+            tar -xzvf ((filename)).tgz ## Just press tab after tar -xzvf 
+
+            sudo cp -P cuda/include/cudnn.h /usr/local/cuda-11.3/include
+            sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-11.3/lib64/
+            sudo chmod a+r /usr/local/cuda-11.3/lib64/libcudnn*
+
+            nvcc -V ## Check to make install worked.
+            ```
 
 4. **Installing Miniconda:**
     ```bash
@@ -106,18 +107,18 @@
     ```
 
 5. **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
-- In a new terminal:
-    ```bash
-    git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
-    cd kaolin
-    pip install -r tools/build_requirements.txt -r tools/viz_requirements.txt -r tools/requirements.txt
-    python setup.py develop
+    - In a new terminal:
+        ```bash
+        git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
+        cd kaolin
+        pip install -r tools/build_requirements.txt -r tools/viz_requirements.txt -r tools/requirements.txt
+        python setup.py develop
 
-    ## Test your install
-    python -c "import kaolin; print(kaolin.__version__)"
+        ## Test your install
+        python -c "import kaolin; print(kaolin.__version__)"
 
-    sudo reboot
-    ```
+        sudo reboot
+        ```
 
     ```bash
     cd text2mesh
