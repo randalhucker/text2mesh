@@ -30,7 +30,7 @@
     ```
 
 3. **Installing CUDA-11.3:**
-- Start by following all the steps starting [here](hhttps://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
+- Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
 
 - For step 3.9.3, the desired distro/arch is *ubuntu2004/x86_64*.
 
