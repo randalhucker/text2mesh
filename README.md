@@ -43,8 +43,7 @@
         - Make sure to run 13.1.1.
         - Also run the *Ubuntu* section of 13.3.1.
 
-3.5. **If you have any version of CUDA besides 11.3:**
-
+4. **If you have any version of CUDA besides 11.3:**
     - Removing existing CUDA:
 
         ```bash
@@ -63,7 +62,7 @@
         sudo reboot
         ```
 
-4. **Installing the rest of CUDA 11.3:** 
+5. **Installing the rest of CUDA 11.3:** 
 
         ```bash
         wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
@@ -101,7 +100,7 @@
             nvcc -V ## Check to make install worked.
             ```
 
-4. **Installing Miniconda:**
+6. **Installing Miniconda:**
     ```bash
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
@@ -110,7 +109,7 @@
     source ~/.bashrc
     ```
 
-5. **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
+7. **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
     - In a new terminal:
         ```bash
         git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
@@ -125,7 +124,7 @@
         ```
 
     - Finally:
-    
+
     ```bash
     cd text2mesh
     conda env create --file text2mesh.yml
