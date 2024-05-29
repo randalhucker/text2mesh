@@ -38,7 +38,9 @@
 
     - Start by following all the steps starting [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#prepare-ubuntu).
 
-    - For step 3.9.3: The desired distro/arch is _ubuntu2004/x86_64_.
+    - We will be doing the network repo install.
+
+      - For step 3.9.3: The desired distro/arch is _ubuntu2004/x86_64_.
 
     - For step 3.9.4:
 
