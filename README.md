@@ -124,10 +124,19 @@
     ```
 
 7.  **Note:** The below installation will fail if run on something other than a CUDA GPU machine.
-
+    ```bash
+    cd text2mesh
+    
+    conda env create --file text2mesh.yml
+    
+    sudo reboot
+    ```
+    
     - In a new terminal:
 
       ```bash
+      conda activate text2mesh
+      
       git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
       cd kaolin
       pip install -r tools/build_requirements.txt -r tools/viz_requirements.txt -r tools/requirements.txt
