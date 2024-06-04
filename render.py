@@ -20,12 +20,12 @@ class Renderer:
         """Initialize the Renderer.
 
         Args:
-            mesh (str, optional): Path to the mesh file. Defaults to 'sample.obj'.
+            mesh (Mesh): The mesh to render.
             lights (torch.Tensor, optional): Lighting parameters. Defaults to a tensor with predefined values.
             camera (torch.Tensor, optional): Camera projection matrix. Defaults to a perspective projection.
             dim (tuple, optional): Dimensions of the rendered output (width, height). Defaults to (224, 224).
         """
-        
+
         self.mesh = Mesh(mesh)
         if camera is None:
             camera = kal.render.camera.generate_perspective_projection(np.pi / 3).to(

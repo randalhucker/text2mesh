@@ -88,6 +88,8 @@ def run_branched(args: argparse.Namespace):
     # Load the mesh from the OBJ file and initialize the renderer
     mesh = Mesh(args.obj_path)
     render = Renderer(mesh, dim=(res, res))
+
+    # Normalize the mesh vertices
     MeshNormalizer(mesh)()
 
     # Initialize prior color to a neutral gray
@@ -103,9 +105,11 @@ def run_branched(args: argparse.Namespace):
 
     losses = []  # List to store loss values
 
-    n_augs = args.n_augs  # Number of augmentations
+    n_augs = args.n_augs  # Number of augmentations for the rendered images
     dir = args.output_dir  # Output directory
 
+    # Normalize transform for image data
+    # Mean and standard deviation values for the images in the dataset
     clip_normalizer = transforms.Normalize(
         (0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)
     )
@@ -116,6 +120,8 @@ def run_branched(args: argparse.Namespace):
     )
 
     # Augmentation settings
+    # The augmentations are applied to the rendered images
+    # in the order they're listed to increase the diversity of the training data
     augment_transform = transforms.Compose(
         [
             transforms.RandomResizedCrop(res, scale=(1, 1)),
@@ -165,7 +171,7 @@ def run_branched(args: argparse.Namespace):
     normweight = 1.0  # Normal for the normal augmentations
 
     # MLP Settings
-    # Input dimension
+    # Input dimensions for the MLP network (3 for XYZ, 6 for XYZ+Normals)
     input_dim = 6 if args.input_normals else 3
 
     # Only Z dimension
@@ -317,7 +323,7 @@ def run_branched(args: argparse.Namespace):
         if n_augs > 0:
             loss = 0.0  # Initialize loss to zero
             for _ in range(n_augs):
-                # Normal augment transform
+                # Normal augment transform the rendered images
                 augmented_image = augment_transform(rendered_images)
 
                 # Encode the augmented images using the CLIP model
@@ -434,7 +440,7 @@ def run_branched(args: argparse.Namespace):
             if not args.no_prompt:  # If text prompt is specified
                 normloss.backward(retain_graph=True)
 
-        # Handle geometric loss
+        # Handle geometric loss being used in the training
         if args.geoloss:
             # Initialize the mesh with default color
             default_color = torch.zeros(len(mesh.vertices), 3).to(device)
@@ -498,13 +504,17 @@ def run_branched(args: argparse.Namespace):
                 # Backward pass for the normal loss
                 normloss.backward(retain_graph=True)
 
-        # Update the mesh with the network output
+        # Update the model parameters based on the gradients
         optim.step()
 
-        for param in mlp.mlp_normal.parameters():  # Normal parameters
+        for (
+            param
+        ) in mlp.mlp_normal.parameters():  # Normal parameters are enabled for training
             param.requires_grad = True
 
-        for param in mlp.mlp_rgb.parameters():  # RGB parameters
+        for (
+            param
+        ) in mlp.mlp_rgb.parameters():  # RGB parameters are enabled for training
             param.requires_grad = True
 
         if activate_scheduler:  # If learning rate scheduler is active
@@ -514,11 +524,12 @@ def run_branched(args: argparse.Namespace):
             losses.append(loss.item())
 
         # Adjust normweight if set
-        if args.decayfreq is not None:  # If decay frequency is set
-            if (
-                i % args.decayfreq == 0
-            ):  # If iteration is a multiple of the decay frequency
-                normweight *= args.cropdecay  # Multiply normweight by crop decay
+        if args.decayfreq is not None:
+            # How often the normweight is adjusted
+            if i % args.decayfreq == 0:
+                # Multiply normweight by decay factor
+                # Gradually reduce the contribution of the normals network
+                normweight *= args.cropdecay
 
         if i % 100 == 0:  # If iteration is a multiple of 100
             report_process(args, dir, i, loss, loss_check, losses, rendered_images)
@@ -723,7 +734,14 @@ def update_mesh(
         sampled_mesh (Mesh): The mesh object being updated.
         vertices (torch.Tensor): Original vertices of the mesh.
     """
+
     # Get the RGB and normal predictions from the MLP
+    # pred_rgb is the predicted RGB values
+    # pred_normal is used to update the vertex positions of the mesh.
+    # - If pred_normal is zero, the vertices remain unchanged.
+    # - If pred_normal has positive or negative values,
+    #       the vertices move along the direction of their normals,
+    #       either outward or inward, respectively.
     pred_rgb, pred_normal = mlp(network_input)
 
     # Update the mesh face attributes with the predicted RGB values
