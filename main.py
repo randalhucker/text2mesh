@@ -15,11 +15,11 @@ import kaolin as kal
 import kaolin.ops.mesh
 import clip
 
-from device_setup import device
 from mesh import Mesh
 from Normalization import MeshNormalizer
 from neural_style_field import NeuralStyleField
 from render import Renderer
+from utils import device
 
 
 def run_branched(args: argparse.Namespace):
