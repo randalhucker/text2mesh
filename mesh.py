@@ -7,7 +7,6 @@ import torch
 import kaolin as kal
 
 import utils
-from utils import device
 
 
 class Mesh:
@@ -30,8 +29,8 @@ class Mesh:
             raise ValueError(f"{obj_path} extension not implemented in mesh reader.")
 
         # Store the mesh vertices and faces on the GPU
-        self.vertices: torch.Tensor = mesh.vertices.to(device)
-        self.faces: torch.Tensor = mesh.faces.to(device)
+        self.vertices: torch.Tensor = mesh.vertices.to(utils.device)
+        self.faces: torch.Tensor = mesh.faces.to(utils.device)
 
         self.vertex_normals: torch.Tensor | None = None
         self.face_normals: torch.Tensor | None = None
@@ -47,7 +46,7 @@ class Mesh:
             # Handle the case where the mesh has vertex normals
             if mesh.vertex_normals is not None:
                 # Store the vertex normals on the GPU
-                self.vertex_normals = mesh.vertex_normals.to(device).float()
+                self.vertex_normals = mesh.vertex_normals.to(utils.device).float()
 
                 # Normalize the vertex normals
                 self.vertex_normals = torch.nn.functional.normalize(self.vertex_normals)
@@ -55,7 +54,7 @@ class Mesh:
             # Handle the case where the mesh has face normals
             if mesh.face_normals is not None:
                 # Store the face normals on the GPU
-                self.face_normals = mesh.face_normals.to(device).float()
+                self.face_normals = mesh.face_normals.to(utils.device).float()
 
                 # Normalize the face normals
                 self.face_normals = torch.nn.functional.normalize(self.face_normals)
@@ -63,7 +62,7 @@ class Mesh:
         # Set the initial color of the mesh
         self.set_mesh_color(color)
 
-    def standardize_mesh(self, inplace=False) -> "Mesh":
+    def standardize_mesh(self, inplace=False) -> 'Mesh':
         """A method to standardize the mesh by centering the vertices and scaling the mesh to fit in a unit cube.
 
         Args:
@@ -75,7 +74,7 @@ class Mesh:
         mesh = self if inplace else copy.deepcopy(self)
         return utils.standardize_mesh(mesh)
 
-    def normalize_mesh(self, inplace=False) -> "Mesh":
+    def normalize_mesh(self, inplace=False) -> 'Mesh':
         """A method to normalize the mesh by scaling the mesh to fit in a unit sphere.
 
         Args:
@@ -107,12 +106,12 @@ class Mesh:
         Args:
             color (torch.Tensor): The color of the mesh. The color should be a tensor of shape (3,) representing the RGB values of the color.
         """
-        self.texture_map = utils.get_texture_map_from_color(self, color)
+        self.texture_map = utils.get_texture_map_from_color(color)
         self.face_attributes = utils.get_face_attributes_from_color(self, color)
 
     def set_image_texture(
         self, texture_map: torch.Tensor | str, inplace=True
-    ) -> "Mesh":
+    ) -> 'Mesh':
         """A method to set the texture map of the mesh.
 
         Args:
@@ -133,7 +132,7 @@ class Mesh:
                 torch.tensor(
                     texture_map, dtype=torch.float
                 )  # Convert the image to a tensor
-                .to(device)  # Move the tensor to the GPU
+                .to(utils.device)  # Move the tensor to the GPU
                 .permute(2, 0, 1)  # Permute the dimensions of the tensor
                 .unsqueeze(0)  # Add a batch dimension
             )
@@ -141,7 +140,7 @@ class Mesh:
         mesh.texture_map = texture_map
         return mesh
 
-    def divide(self, inplace=True) -> "Mesh":
+    def divide(self, inplace=True) -> 'Mesh':
         """A method to divide the mesh into smaller triangles.
 
         Args:

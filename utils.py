@@ -1,20 +1,22 @@
 from pathlib import Path
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, TYPE_CHECKING
 
 import numpy as np
 import torch
 import torch.nn as nn
 import kaolin as kal
 
-from mesh import Mesh
+from utils import device
+
+if TYPE_CHECKING:
+    from mesh import Mesh
 
 # Check if CUDA is available and set the device accordingly
 if torch.cuda.is_available():
-    device = torch.device("cuda:0")
+    device: torch.device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 else:
-    device = torch.device("cpu")
-
+    device: torch.device = torch.device("cpu")
 
 def get_camera_from_view(elev: float, azim: float, r=3.0) -> torch.Tensor:
     """Generate a camera transformation matrix given elevation and azimuth angles.
@@ -109,7 +111,7 @@ def apply_affine(verts: torch.Tensor, A: torch.Tensor):
     return transformed_verts.T  # Return the transformed vertices
 
 
-def standardize_mesh(mesh: Mesh) -> Mesh:
+def standardize_mesh(mesh: 'Mesh') -> 'Mesh':
     """A method to standardize the mesh by centering the vertices and scaling them to a unit sphere.
 
     Args:
@@ -127,7 +129,7 @@ def standardize_mesh(mesh: Mesh) -> Mesh:
     return mesh
 
 
-def normalize_mesh(mesh: Mesh) -> Mesh:
+def normalize_mesh(mesh: 'Mesh') -> 'Mesh':
     """A method to normalize the mesh by scaling the mesh to fit in a unit sphere.
 
     Args:
@@ -148,11 +150,10 @@ def normalize_mesh(mesh: Mesh) -> Mesh:
     return mesh
 
 
-def get_texture_map_from_color(mesh: Mesh, color: torch.Tensor, H=224, W=224):
+def get_texture_map_from_color(color: torch.Tensor, H=224, W=224):
     """Get a texture map from a color. The texture map is a 2D image that is used to texture the mesh. The texture map is a tensor of shape (1, 3, H, W).
 
     Args:
-        mesh (Mesh): The mesh.
         color (torch.Tensor): The color of the texture map.
         H (int, optional): The height of the texture map. Defaults to 224.
         W (int, optional): The width of the texture map. Defaults to 224.
@@ -170,7 +171,7 @@ def get_texture_map_from_color(mesh: Mesh, color: torch.Tensor, H=224, W=224):
     return texture_map.permute(0, 3, 1, 2)
 
 
-def get_face_attributes_from_color(mesh: Mesh, color: torch.Tensor) -> torch.Tensor:
+def get_face_attributes_from_color(mesh: 'Mesh', color: torch.Tensor) -> torch.Tensor:
     """A method to get face attributes from a color.
 
     Args:
@@ -230,7 +231,7 @@ def sample_bary(faces: torch.Tensor, vertices: torch.Tensor) -> torch.Tensor:
 
 
 def add_vertices(
-    mesh: Mesh,
+    mesh: 'Mesh',
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
     """Add vertices to the mesh by sampling barycentric coordinates for each face.
 
@@ -422,7 +423,7 @@ def get_uv_assignment(num_faces: int):
         py += 2  # Move to the next position in the y-direction
 
 
-def get_texture_visual(res: int, nt: callable, mesh: Mesh) -> torch.Tensor:
+def get_texture_visual(res: int, nt: callable, mesh: 'Mesh') -> torch.Tensor:
     """Generate a texture visualization for the mesh.
 
     Args:

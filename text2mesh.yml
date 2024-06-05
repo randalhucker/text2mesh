@@ -8,14 +8,16 @@ dependencies:
   - cudatoolkit=11.3
   - jupyter=1.0.0
   - matplotlib=3.5.2
-  - polyscope
-  - pymeshlab
-  - python=3.9
+  # - polyscope
+  # - pymeshlab
+  # - python=3.9
+  - python=3.8
   - pip=21.1.2
   - pytorch=1.12.1
+  - scipy
   - setuptools=69.5.1
   - torchaudio=0.12.1
   - torchvision=0.13.1
   - pip:
     - git+https://github.com/openai/CLIP.git
-    - git+https://github.com/NVIDIAGameWorks/kaolin
+    # - git+https://github.com/NVIDIAGameWorks/kaolin
