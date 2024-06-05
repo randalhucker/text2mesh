@@ -1,9 +1,10 @@
+from datetime import datetime
 import os
-from typing import Tuple
+from typing import Tuple, Optional, Dict, Any
 
-import torch.nn as nn
+import torch
+from torch import nn, optim
 import torch.nn.functional as F
-import torch.optim
 
 from utils import FourierFeatureTransform, device
 
@@ -69,6 +70,7 @@ class NeuralStyleField(nn.Module):
         input_dim=3,
         progressive_encoding=True,
         exclude=0,
+        text_encoding_dim=512
     ):
         """Initialize the NeuralStyleField module.
 
@@ -86,6 +88,7 @@ class NeuralStyleField(nn.Module):
             input_dim (int, optional): Dimensionality of the input. Defaults to 3.
             progressive_encoding (bool, optional): Whether to apply progressive encoding. Defaults to True.
             exclude (int, optional): Exclusion parameter for Fourier features. Defaults to 0.
+            text_encoding_dim (int, optional): Dimensionality of the text encoding. Defaults to 512.
         """
         super(NeuralStyleField, self).__init__()
         self.pe = ProgressiveEncoding(mapping_size=width, T=niter, d=input_dim)
@@ -93,15 +96,17 @@ class NeuralStyleField(nn.Module):
         self.normclamp = normclamp
         self.normratio = normratio
         layers = []
+        
+        combined_input_dim = input_dim + text_encoding_dim
 
         if encoding == "gaussian":
-            layers.append(FourierFeatureTransform(input_dim, width, sigma, exclude))
+            layers.append(FourierFeatureTransform(combined_input_dim, width, sigma, exclude))
             if progressive_encoding:
                 layers.append(self.pe)
-            layers.append(nn.Linear(width * 2 + input_dim, width))
+            layers.append(nn.Linear(width * 2 + combined_input_dim, width))
             layers.append(nn.ReLU())
         else:
-            layers.append(nn.Linear(input_dim, width))
+            layers.append(nn.Linear(combined_input_dim, width))
             layers.append(nn.ReLU())
 
         for _ in range(depth):
@@ -137,21 +142,25 @@ class NeuralStyleField(nn.Module):
         self.mlp_normal[-1].weight.data.zero_()
         self.mlp_normal[-1].bias.data.zero_()
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, vertices: torch.Tensor, text_encoding: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Forward pass for the NeuralStyleField module.
 
         Args:
-            x (torch.Tensor): Input tensor.
+            vertices (torch.Tensor): Input tensor of vertices.
+            text_encoding (torch.Tensor): Encoded text tensor.
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: Output tensors for colors and displacements.
         """
+        # Concatenate vertices with the text encoding
+        combined_input = torch.cat((vertices, text_encoding.expand(vertices.shape[0], -1)), dim=1)
+        
         for layer in self.base:
-            x = layer(x)
-        colors = self.mlp_rgb[0](x)
+            combined_input = layer(combined_input)
+        colors = self.mlp_rgb[0](combined_input)
         for layer in self.mlp_rgb[1:]:
             colors = layer(colors)
-        displ = self.mlp_normal[0](x)
+        displ = self.mlp_normal[0](combined_input)
         for layer in self.mlp_normal[1:]:
             displ = layer(displ)
 
@@ -168,14 +177,62 @@ class NeuralStyleField(nn.Module):
         return colors, displ
 
 
-def save_model(model, loss, iter, optim, output_dir):
-    save_dict = {
-        "iter": iter,
+def save_model(
+    model: nn.Module,
+    optim: optim.Optimizer,
+    lr_scheduler: Optional[optim.lr_scheduler._LRScheduler],
+    loss: float,
+    output_dir: str,
+) -> None:
+    """Save the model, optimizer, and learning rate scheduler to a checkpoint file.
+    
+    Args:
+        model (nn.Module): The model to save. A PyTorch neural network module.
+        optim (optim.Optimizer): The optimizer used to train the model.
+        lr_scheduler (Optional[optim.lr_scheduler._LRScheduler]): The learning rate scheduler used to train the model.
+        loss (float): The last computed loss value.
+        output_dir (str): The directory to save the checkpoint file.
+    """
+    save_dict: Dict[str, Any] = {
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optim.state_dict(),
+        "scheduler_state_dict": (
+            lr_scheduler.state_dict() if lr_scheduler is not None else None
+        ),
         "loss": loss,
     }
 
-    path = os.path.join(output_dir, "checkpoint.pth.tar")
+    filename = f"checkpoint_{ datetime.now().strftime("%d%m%Y_%H%M%S") }.pth.tar"
+    path = os.path.join(output_dir, filename)
 
     torch.save(save_dict, path)
+
+def load_model(
+    model: nn.Module,
+    optim: optim.Optimizer,
+    lr_scheduler: Optional[optim.lr_scheduler._LRScheduler],
+    model_path: str
+) -> Tuple[nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float]:
+    """Load a model, optimizer, and learning rate scheduler from a checkpoint file.
+
+    Args:
+        model (nn.Module): The model to load. A PyTorch neural network module.
+        optim (optim.Optimizer): The optimizer to load.
+        lr_scheduler (Optional[optim.lr_scheduler._LRScheduler]): The learning rate scheduler to load.
+        model_path (str): The path to the checkpoint file.
+
+    Returns:
+        Tuple[nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float]: The loaded model, optimizer, learning rate scheduler, and loss value.
+    """
+    
+    checkpoint = torch.load(model_path)
+
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optim.load_state_dict(checkpoint["optimizer_state_dict"])
+    
+    if lr_scheduler is not None and "scheduler_state_dict" in checkpoint:
+        lr_scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+        
+    loss = checkpoint["loss"]
+    
+    return model, optim, lr_scheduler, loss

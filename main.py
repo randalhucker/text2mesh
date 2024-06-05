@@ -17,7 +17,7 @@ import clip
 
 from mesh import Mesh
 from Normalization import MeshNormalizer
-from neural_style_field import NeuralStyleField
+from neural_style_field import NeuralStyleField, load_model, save_model
 from render import Renderer
 from utils import device
 
@@ -215,12 +215,18 @@ def run_branched(args: argparse.Namespace):
             optim, step_size=args.decay_step, gamma=args.lr_decay
         )
 
+    if args.checkpoint_path is not None:
+        mlp, optim, lr_scheduler, last_loss = load_model(
+            mlp, optim, lr_scheduler, args.checkpoint_path
+        )
+        losses.append(last_loss)
+
     # Handle text prompt
     if not args.no_prompt:
         if args.prompt:
             prompt = " ".join(args.prompt)
             prompt_token = clip.tokenize([prompt]).to(device)
-            encoded_text = clip_model.encode_text(prompt_token)
+            encoded_text: torch.Tensor = clip_model.encode_text(prompt_token)
 
             # Save prompt to file
             with open(os.path.join(dir, prompt), "w") as f:
@@ -263,14 +269,24 @@ def run_branched(args: argparse.Namespace):
             network_input, dim=0
         )
 
+    # Choose the appropriate encoded input for updating the mesh
+    if args.no_prompt and args.image:
+        encoded_input = encoded_image
+    elif args.normprompt is not None:
+        encoded_input = norm_encoded
+    else:
+        encoded_input = encoded_text
+
     # Main training loop
-    for i in tqdm(range(args.n_iter)):
+    for epoch in tqdm(range(args.n_iter)):
         optim.zero_grad()  # Zero the gradients
 
         sampled_mesh = mesh  # Sampled mesh
 
         # Update the mesh with the network output
-        update_mesh(mlp, network_input, prior_color, sampled_mesh, vertices)
+        update_mesh(
+            mlp, network_input, encoded_input, prior_color, sampled_mesh, vertices
+        )
 
         # Render the front views of the mesh
         rendered_images, elev, azim = render.render_front_views(
@@ -303,8 +319,8 @@ def run_branched(args: argparse.Namespace):
         if (
             args.cropsteps != 0
             and cropupdate != 0
-            and i != 0
-            and i % args.cropsteps == 0
+            and epoch != 0
+            and epoch % args.cropsteps == 0
         ):
             # Update crop value
             curcrop += cropupdate
@@ -526,21 +542,22 @@ def run_branched(args: argparse.Namespace):
         # Adjust normweight if set
         if args.decayfreq is not None:
             # How often the normweight is adjusted
-            if i % args.decayfreq == 0:
+            if epoch % args.decayfreq == 0:
                 # Multiply normweight by decay factor
                 # Gradually reduce the contribution of the normals network
                 normweight *= args.cropdecay
 
-        if i % 100 == 0:  # If iteration is a multiple of 100
-            report_process(args, dir, i, loss, loss_check, losses, rendered_images)
+        if epoch % 100 == 0:  # If iteration is a multiple of 100
+            report_process(args, dir, epoch, loss, loss_check, losses, rendered_images)
 
     export_final_results(args, dir, losses, mesh, mlp, network_input, vertices)
+    save_model(mlp, optim, lr_scheduler, losses.pop(), "models/")
 
 
 def report_process(
     args: argparse.Namespace,
     dir: str,
-    i: int,
+    epoch: int,
     loss: torch.Tensor,
     loss_check: float,
     losses: List[float],
@@ -551,18 +568,18 @@ def report_process(
     Args:
         args: Command-line arguments.
         dir (str): Output directory path.
-        i (int): Current iteration number (0-indexed count).
+        epoch (int): Current iteration number (0-indexed count).
         loss (torch.Tensor): Current loss value.
         loss_check (float): Loss check value.
         losses (List[float]): List of loss values.
         rendered_images (torch.Tensor): Rendered images.
     """
     # Print the current iteration and loss value
-    print("iter: {} loss: {}".format(i, loss.item()))
+    print("iter: {} loss: {}".format(epoch, loss.item()))
 
     # Save the rendered images for the current iteration
     torchvision.utils.save_image(
-        rendered_images, os.path.join(dir, "iter_{}.jpg".format(i))
+        rendered_images, os.path.join(dir, "iter_{}.jpg".format(epoch))
     )
 
     # Learning rate adjustment for plateau detection
@@ -721,6 +738,7 @@ def save_rendered_results(
 def update_mesh(
     mlp: NeuralStyleField,
     network_input: torch.Tensor,
+    text_encoding: torch.Tensor,
     prior_color: torch.Tensor,
     sampled_mesh: Mesh,
     vertices: torch.Tensor,
@@ -730,6 +748,7 @@ def update_mesh(
     Args:
         mlp (NeuralStyleField): The trained Multi-Layer Perceptron (MLP) model.
         network_input (torch.Tensor): Input to the MLP for generating predictions.
+        text_encoding (torch.Tensor): Encoded text prompt.
         prior_color (torch.Tensor): Prior color values for the mesh.
         sampled_mesh (Mesh): The mesh object being updated.
         vertices (torch.Tensor): Original vertices of the mesh.
@@ -742,7 +761,7 @@ def update_mesh(
     # - If pred_normal has positive or negative values,
     #       the vertices move along the direction of their normals,
     #       either outward or inward, respectively.
-    pred_rgb, pred_normal = mlp(network_input)
+    pred_rgb, pred_normal = mlp(network_input, text_encoding)
 
     # Update the mesh face attributes with the predicted RGB values
     sampled_mesh.face_attributes = (
@@ -761,6 +780,13 @@ def update_mesh(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--checkpoint_path",
+        type=str,
+        default=None,
+        help="Path to the checkpoint file (optional)",
+    )
 
     parser.add_argument(
         "--obj_path",
