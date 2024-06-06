@@ -140,6 +140,8 @@ def execute():
 
     # Initialize the model
     model = NeuralStyleField(
+        clamp=args.clamp,
+        normclamp=args.normclamp,
         sigma=args.sigma,
         depth=args.depth,
         width=args.width,
@@ -147,8 +149,6 @@ def execute():
         colordepth=args.colordepth,
         normdepth=args.normdepth,
         normratio=args.normratio,
-        clamp=args.clamp,
-        normclamp=args.normclamp,
         niter=args.niter,
         input_dim=args.input_dim,
         progressive_encoding=args.pe,

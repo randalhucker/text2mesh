@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 import kaolin as kal
 
-from utils import device
-
 if TYPE_CHECKING:
     from mesh import Mesh
 
@@ -17,6 +15,7 @@ if torch.cuda.is_available():
     torch.cuda.set_device(device)
 else:
     device: torch.device = torch.device("cpu")
+
 
 def get_camera_from_view(elev: float, azim: float, r=3.0) -> torch.Tensor:
     """Generate a camera transformation matrix given elevation and azimuth angles.
@@ -111,7 +110,7 @@ def apply_affine(verts: torch.Tensor, A: torch.Tensor):
     return transformed_verts.T  # Return the transformed vertices
 
 
-def standardize_mesh(mesh: 'Mesh') -> 'Mesh':
+def standardize_mesh(mesh: "Mesh") -> "Mesh":
     """A method to standardize the mesh by centering the vertices and scaling them to a unit sphere.
 
     Args:
@@ -129,7 +128,7 @@ def standardize_mesh(mesh: 'Mesh') -> 'Mesh':
     return mesh
 
 
-def normalize_mesh(mesh: 'Mesh') -> 'Mesh':
+def normalize_mesh(mesh: "Mesh") -> "Mesh":
     """A method to normalize the mesh by scaling the mesh to fit in a unit sphere.
 
     Args:
@@ -171,7 +170,7 @@ def get_texture_map_from_color(color: torch.Tensor, H=224, W=224):
     return texture_map.permute(0, 3, 1, 2)
 
 
-def get_face_attributes_from_color(mesh: 'Mesh', color: torch.Tensor) -> torch.Tensor:
+def get_face_attributes_from_color(mesh: "Mesh", color: torch.Tensor) -> torch.Tensor:
     """A method to get face attributes from a color.
 
     Args:
@@ -231,7 +230,7 @@ def sample_bary(faces: torch.Tensor, vertices: torch.Tensor) -> torch.Tensor:
 
 
 def add_vertices(
-    mesh: 'Mesh',
+    mesh: "Mesh",
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
     """Add vertices to the mesh by sampling barycentric coordinates for each face.
 
@@ -423,7 +422,7 @@ def get_uv_assignment(num_faces: int):
         py += 2  # Move to the next position in the y-direction
 
 
-def get_texture_visual(res: int, nt: callable, mesh: 'Mesh') -> torch.Tensor:
+def get_texture_visual(res: int, nt: callable, mesh: "Mesh") -> torch.Tensor:
     """Generate a texture visualization for the mesh.
 
     Args:
@@ -585,25 +584,25 @@ def psScreenshot(
     axis: np.ndarray,
     angles: List[float],
     save_path: str,
-    name="mesh",
-    frame_folder="frames",
-    scalars: np.ndarray | None = None,
-    colors: np.ndarray | None = None,
-    defined_on="faces",
-    highlight_faces: np.ndarray | None = None,
+    name: str = "mesh",
+    frame_folder: str = "frames",
+    scalars: Optional[np.ndarray] = None,
+    colors: Optional[np.ndarray] = None,
+    defined_on: str = "faces",
+    highlight_faces: Optional[np.ndarray] = None,
     highlight_color: List[int] = [1, 0, 0],
-    highlight_radius: float | None = None,
-    cmap: str | None = None,
-    sminmax: Tuple | None = None,
-    cpos: np.ndarray | None = None,
-    clook: np.ndarray | None = None,
-    save_video=False,
-    save_base=False,
-    ground_plane="tile_reflection",
-    debug=False,
-    edge_color=[0, 0, 0],
-    edge_width=1,
-    material: str | None = None,
+    highlight_radius: Optional[float] = None,
+    cmap: Optional[str] = None,
+    sminmax: Optional[Tuple] = None,
+    cpos: Optional[np.ndarray] = None,
+    clook: Optional[np.ndarray] = None,
+    save_video: bool = False,
+    save_base: bool = False,
+    ground_plane: str = "tile_reflection",
+    debug: bool = False,
+    edge_color: List[int] = [0, 0, 0],
+    edge_width: int = 1,
+    material: Optional[str] = None,
 ):
     """
     Generate and save screenshots of a mesh rotated around a given axis.

@@ -1,4 +1,5 @@
 import copy
+from typing import Optional, Union
 
 import numpy as np
 import PIL
@@ -62,7 +63,7 @@ class Mesh:
         # Set the initial color of the mesh
         self.set_mesh_color(color)
 
-    def standardize_mesh(self, inplace=False) -> 'Mesh':
+    def standardize_mesh(self, inplace=False) -> "Mesh":
         """A method to standardize the mesh by centering the vertices and scaling the mesh to fit in a unit cube.
 
         Args:
@@ -74,7 +75,7 @@ class Mesh:
         mesh = self if inplace else copy.deepcopy(self)
         return utils.standardize_mesh(mesh)
 
-    def normalize_mesh(self, inplace=False) -> 'Mesh':
+    def normalize_mesh(self, inplace=False) -> "Mesh":
         """A method to normalize the mesh by scaling the mesh to fit in a unit sphere.
 
         Args:
@@ -110,8 +111,8 @@ class Mesh:
         self.face_attributes = utils.get_face_attributes_from_color(self, color)
 
     def set_image_texture(
-        self, texture_map: torch.Tensor | str, inplace=True
-    ) -> 'Mesh':
+        self, texture_map: Union[torch.Tensor, str], inplace=True
+    ) -> "Mesh":
         """A method to set the texture map of the mesh.
 
         Args:
@@ -140,7 +141,7 @@ class Mesh:
         mesh.texture_map = texture_map
         return mesh
 
-    def divide(self, inplace=True) -> 'Mesh':
+    def divide(self, inplace=True) -> "Mesh":
         """A method to divide the mesh into smaller triangles.
 
         Args:
@@ -156,7 +157,7 @@ class Mesh:
         mesh.face_uvs = new_face_uvs
         return mesh
 
-    def export(self, file: str, color: np.ndarray | None = None):
+    def export(self, file: str, color: Optional[np.ndarray]):
         """Export the mesh to a file in the OBJ format.
 
         Args:

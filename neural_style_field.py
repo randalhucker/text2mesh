@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-from typing import Tuple, Optional, Dict, Any
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 from torch import nn, optim
@@ -57,6 +57,8 @@ class NeuralStyleField(nn.Module):
     # Same base then split into two separate modules
     def __init__(
         self,
+        clamp: Optional[str],
+        normclamp: Optional[str],
         sigma: float,
         depth: int,
         width: int,
@@ -64,17 +66,17 @@ class NeuralStyleField(nn.Module):
         colordepth=2,
         normdepth=2,
         normratio=0.1,
-        clamp: str | None = None,
-        normclamp: str | None = None,
         niter=6000,
         input_dim=3,
         progressive_encoding=True,
         exclude=0,
-        text_encoding_dim=512
+        text_encoding_dim=512,
     ):
         """Initialize the NeuralStyleField module.
 
         Args:
+            clamp (str, optional): Clamping method for colors ('tanh' or 'clamp'). Defaults to None.
+            normclamp (str, optional): Clamping method for normals ('tanh' or 'clamp'). Defaults to None.
             sigma (float): Standard deviation for Gaussian Fourier features.
             depth (int): Depth of the base MLP.
             width (int): Width of the MLP layers.
@@ -82,8 +84,6 @@ class NeuralStyleField(nn.Module):
             colordepth (int, optional): Depth of the color branch. Defaults to 2.
             normdepth (int, optional): Depth of the normal branch. Defaults to 2.
             normratio (float, optional): Scaling factor for normals. Defaults to 0.1.
-            clamp (str, optional): Clamping method for colors ('tanh' or 'clamp'). Defaults to None.
-            normclamp (str, optional): Clamping method for normals ('tanh' or 'clamp'). Defaults to None.
             niter (int, optional): Number of iterations for progressive encoding. Defaults to 6000.
             input_dim (int, optional): Dimensionality of the input. Defaults to 3.
             progressive_encoding (bool, optional): Whether to apply progressive encoding. Defaults to True.
@@ -91,16 +91,17 @@ class NeuralStyleField(nn.Module):
             text_encoding_dim (int, optional): Dimensionality of the text encoding. Defaults to 512.
         """
         super(NeuralStyleField, self).__init__()
-        self.pe = ProgressiveEncoding(mapping_size=width, T=niter, d=input_dim)
+        combined_input_dim = input_dim + text_encoding_dim
+        self.pe = ProgressiveEncoding(mapping_size=width, T=niter, d=combined_input_dim)
         self.clamp = clamp
         self.normclamp = normclamp
         self.normratio = normratio
         layers = []
-        
-        combined_input_dim = input_dim + text_encoding_dim
 
         if encoding == "gaussian":
-            layers.append(FourierFeatureTransform(combined_input_dim, width, sigma, exclude))
+            layers.append(
+                FourierFeatureTransform(combined_input_dim, width, sigma, exclude)
+            )
             if progressive_encoding:
                 layers.append(self.pe)
             layers.append(nn.Linear(width * 2 + combined_input_dim, width))
@@ -142,7 +143,9 @@ class NeuralStyleField(nn.Module):
         self.mlp_normal[-1].weight.data.zero_()
         self.mlp_normal[-1].bias.data.zero_()
 
-    def forward(self, vertices: torch.Tensor, text_encoding: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, vertices: torch.Tensor, text_encoding: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Forward pass for the NeuralStyleField module.
 
         Args:
@@ -153,8 +156,10 @@ class NeuralStyleField(nn.Module):
             Tuple[torch.Tensor, torch.Tensor]: Output tensors for colors and displacements.
         """
         # Concatenate vertices with the text encoding
-        combined_input = torch.cat((vertices, text_encoding.expand(vertices.shape[0], -1)), dim=1)
-        
+        combined_input = torch.cat(
+            (vertices, text_encoding.expand(vertices.shape[0], -1)), dim=1
+        )
+
         for layer in self.base:
             combined_input = layer(combined_input)
         colors = self.mlp_rgb[0](combined_input)
@@ -185,7 +190,7 @@ def save_model(
     output_dir: str,
 ) -> None:
     """Save the model, optimizer, and learning rate scheduler to a checkpoint file.
-    
+
     Args:
         model (nn.Module): The model to save. A PyTorch neural network module.
         optim (optim.Optimizer): The optimizer used to train the model.
@@ -202,17 +207,20 @@ def save_model(
         "loss": loss,
     }
 
-    filename = f"checkpoint_{ datetime.now().strftime("%d%m%Y_%H%M%S") }.pth.tar"
+    filename = f"checkpoint_{ datetime.now().strftime('%d%m%Y_%H%M%S') }.pth.tar"
     path = os.path.join(output_dir, filename)
 
     torch.save(save_dict, path)
+
 
 def load_model(
     model: nn.Module,
     optim: optim.Optimizer,
     lr_scheduler: Optional[optim.lr_scheduler._LRScheduler],
-    model_path: str
-) -> Tuple[nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float]:
+    model_path: str,
+) -> Tuple[
+    nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float
+]:
     """Load a model, optimizer, and learning rate scheduler from a checkpoint file.
 
     Args:
@@ -224,15 +232,15 @@ def load_model(
     Returns:
         Tuple[nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float]: The loaded model, optimizer, learning rate scheduler, and loss value.
     """
-    
+
     checkpoint = torch.load(model_path)
 
     model.load_state_dict(checkpoint["model_state_dict"])
     optim.load_state_dict(checkpoint["optimizer_state_dict"])
-    
+
     if lr_scheduler is not None and "scheduler_state_dict" in checkpoint:
         lr_scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
-        
+
     loss = checkpoint["loss"]
-    
+
     return model, optim, lr_scheduler, loss

@@ -1,7 +1,8 @@
+from typing import List, Optional, Tuple, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from typing import List, Tuple
 
 import kaolin as kal
 
@@ -26,7 +27,7 @@ class Renderer:
             dim (tuple, optional): Dimensions of the rendered output (width, height). Defaults to (224, 224).
         """
 
-        self.mesh = Mesh(mesh)
+        self.mesh = mesh
         if camera is None:
             camera = kal.render.camera.generate_perspective_projection(np.pi / 3).to(
                 device
@@ -44,7 +45,7 @@ class Renderer:
         num_views=8,
         show=False,
         lighting=True,
-        background: torch.Tensor | None = None,
+        background: Optional[torch.Tensor] = None,
         mask=False,
     ):
         """Render the mesh from multiple viewpoints along the y-axis.
@@ -54,7 +55,7 @@ class Renderer:
             num_views (int, optional): Number of viewpoints. Defaults to 8.
             show (bool, optional): Whether to display the rendered images. Defaults to False.
             lighting (bool, optional): Whether to apply lighting. Defaults to True.
-            background (Optional[torch.Tensor], optional): Background color to apply. Defaults to None.
+            background (torch.Tensor, optional): Background color to apply. Defaults to None.
             mask (bool, optional): Whether to generate a mask. Defaults to False.
 
         Returns:
@@ -424,7 +425,7 @@ class Renderer:
         background=None,
         mask=False,
         return_views=False,
-    ) -> torch.Tensor | Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         """Render the mesh from multiple front viewpoints with small perturbations.
 
         Args:
@@ -567,7 +568,7 @@ class Renderer:
         show=False,
         lighting=True,
         mask=False,
-    ) -> torch.Tensor | Tuple[torch.Tensor, torch.Tensor]:
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """Render the mesh from specified viewpoints.
 
         Args:

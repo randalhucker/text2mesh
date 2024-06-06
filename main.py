@@ -180,6 +180,8 @@ def run_branched(args: argparse.Namespace):
 
     # Initialize the MLP network
     mlp = NeuralStyleField(
+        args.clamp,
+        args.normclamp,
         args.sigma,
         args.depth,
         args.width,
@@ -187,8 +189,6 @@ def run_branched(args: argparse.Namespace):
         args.colordepth,
         args.normdepth,
         args.normratio,
-        args.clamp,
-        args.normclamp,
         niter=args.n_iter,
         progressive_encoding=args.pe,
         input_dim=input_dim,
