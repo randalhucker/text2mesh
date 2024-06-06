@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 import clip
 import copy
@@ -133,6 +134,9 @@ def prepare_text_prompt(prompt, clip_model):
 
 def execute():
     args = parse_args()
+
+    # Create the output directory if it does not exist
+    Path(args.output_path).mkdir(parents=True, exist_ok=True)
 
     # Load the CLIP model
     clip_model, preprocess = load_clip_model(args.clipmodel, device, jit=args.jit)

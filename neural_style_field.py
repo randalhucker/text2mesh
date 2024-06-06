@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional, Tuple
 
 import torch
 from torch import nn, optim
-import torch.nn.functional as F
 
 from utils import FourierFeatureTransform, device
 
@@ -170,12 +169,12 @@ class NeuralStyleField(nn.Module):
             displ = layer(displ)
 
         if self.clamp == "tanh":
-            colors = F.tanh(colors) / 2
+            colors = torch.tanh(colors) / 2
         elif self.clamp == "clamp":
             colors = torch.clamp(colors, 0, 1)
 
         if self.normclamp == "tanh":
-            displ = F.tanh(displ) * self.normratio
+            displ = torch.tanh(displ) * self.normratio
         elif self.normclamp == "clamp":
             displ = torch.clamp(displ, -self.normratio, self.normratio)
 
