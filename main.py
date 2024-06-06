@@ -193,6 +193,7 @@ def run_branched(args: argparse.Namespace):
         progressive_encoding=args.pe,
         input_dim=input_dim,
         exclude=args.exclude,
+        text_encoding_dim=512,  # Assuming text_encoding_dim from CLIP is 512
     ).to(device)
 
     # Initialize the normals network
@@ -216,10 +217,8 @@ def run_branched(args: argparse.Namespace):
         )
 
     if args.model_path is not None:
-        mlp, optim, last_loss, lr_scheduler = load_model(
-            mlp, optim, args.model_path, lr_scheduler
-        )
-        losses.append(last_loss)
+        # Load the model from the checkpoint
+        _, _, _, _ = load_model(mlp, optim, args.model_path, lr_scheduler)
 
     # Handle text prompt
     if not args.no_prompt:
