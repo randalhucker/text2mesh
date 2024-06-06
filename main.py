@@ -158,7 +158,7 @@ def run_branched(args: argparse.Namespace):
             cropupdate *= -1
 
     # Displacement-only augmentations
-    displaugment_transform = transforms.Compose(
+    displacement_transform = transforms.Compose(
         [
             transforms.RandomResizedCrop(
                 res, scale=(args.normmincrop, args.normmincrop)
@@ -484,7 +484,7 @@ def run_branched(args: argparse.Namespace):
                 ### avgview != aug
                 for _ in range(args.n_normaugs):
                     # Apply normal augment transform
-                    augmented_image = displaugment_transform(geo_renders)
+                    augmented_image = displacement_transform(geo_renders)
 
                     # Encode the augmented images
                     encoded_renders = clip_model.encode_image(augmented_image)
