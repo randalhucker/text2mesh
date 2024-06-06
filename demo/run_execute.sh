@@ -1,1 +1,1 @@
-python execute.py --prompt an image of an alien made of cobblestone --model_path data/source_models/test.tar --obj_path data/source_meshes/alien.obj --output_dir results/demo/alien/cobblestone --sigma 5.0
+python execute.py --prompt an image of an alien made of fire --model_path models/checkpoint.pth.tar --obj_path data/source_meshes/horse.obj --output_path results/demo/alien/cobblestone_test --sigma 5.0

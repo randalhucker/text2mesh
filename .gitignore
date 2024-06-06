@@ -3,6 +3,7 @@
 .vs/
 .vscode/
 results/
+models/
 slurm/
 docs/
 *.pyc

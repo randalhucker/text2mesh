@@ -19,7 +19,7 @@ def parse_args():
 
     # Input/output settings
     parser.add_argument(
-        "--prompt", type=str, required=True, help="Text prompt for the model"
+        "--prompt", nargs="+", type=str, default="", help="Text prompt for the model"
     )
     parser.add_argument(
         "--model_path", type=str, required=True, help="Path to the model checkpoint"
@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument(
         "--output_path", type=str, required=True, help="Directory to save the output"
     )
+    parser.add_argument("--save_render", action="store_true", help="Save render")
 
     # CLIP model settings
     parser.add_argument(
@@ -123,6 +124,7 @@ def load_clip_model(clip_model_name, device, jit=False):
 
 def prepare_text_prompt(prompt, clip_model):
     """Encode the text prompt using the CLIP model."""
+    prompt = " ".join(prompt)
     prompt_token = clip.tokenize([prompt]).to(device)
     with torch.no_grad():
         encoded_text = clip_model.encode_text(prompt_token)
@@ -172,13 +174,15 @@ def execute():
     )
 
     # Load the model from checkpoint
-    model, optim, _ = load_model(model, optim, args.model_path)
+    _, _, _, _ = load_model(model, optim, args.model_path)
 
     # Update the mesh with the new input
     update_mesh(model, network_input, encoded_text, prior_color, mesh, vertices)
 
     # Export the final results
-    export_final_results(args, args.output_path, mesh, model, network_input, vertices)
+    export_final_results(
+        args, args.output_path, mesh, model, network_input, encoded_text, vertices
+    )
 
 
 if __name__ == "__main__":

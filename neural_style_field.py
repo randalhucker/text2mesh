@@ -216,21 +216,21 @@ def save_model(
 def load_model(
     model: nn.Module,
     optim: optim.Optimizer,
-    lr_scheduler: Optional[optim.lr_scheduler._LRScheduler],
     model_path: str,
+    lr_scheduler: Optional[optim.lr_scheduler._LRScheduler] = None,
 ) -> Tuple[
-    nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float
+    nn.Module, optim.Optimizer, float, Optional[optim.lr_scheduler._LRScheduler]
 ]:
     """Load a model, optimizer, and learning rate scheduler from a checkpoint file.
 
     Args:
         model (nn.Module): The model to load. A PyTorch neural network module.
         optim (optim.Optimizer): The optimizer to load.
-        lr_scheduler (Optional[optim.lr_scheduler._LRScheduler]): The learning rate scheduler to load.
         model_path (str): The path to the checkpoint file.
+        lr_scheduler (Optional[optim.lr_scheduler._LRScheduler]): The learning rate scheduler to load.
 
     Returns:
-        Tuple[nn.Module, optim.Optimizer, Optional[optim.lr_scheduler._LRScheduler], float]: The loaded model, optimizer, learning rate scheduler, and loss value.
+        Tuple[nn.Module, optim.Optimizer, float, Optional[optim.lr_scheduler._LRScheduler]]: The loaded model, optimizer, learning rate scheduler, and loss value.
     """
 
     checkpoint = torch.load(model_path)
@@ -243,4 +243,4 @@ def load_model(
 
     loss = checkpoint["loss"]
 
-    return model, optim, lr_scheduler, loss
+    return model, optim, loss, lr_scheduler

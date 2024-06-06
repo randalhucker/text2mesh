@@ -215,9 +215,9 @@ def run_branched(args: argparse.Namespace):
             optim, step_size=args.decay_step, gamma=args.lr_decay
         )
 
-    if args.checkpoint_path is not None:
-        mlp, optim, lr_scheduler, last_loss = load_model(
-            mlp, optim, lr_scheduler, args.checkpoint_path
+    if args.model_path is not None:
+        mlp, optim, last_loss, lr_scheduler = load_model(
+            mlp, optim, args.model_path, lr_scheduler
         )
         losses.append(last_loss)
 
@@ -551,7 +551,7 @@ def run_branched(args: argparse.Namespace):
             report_process(args, dir, epoch, loss, loss_check, losses, rendered_images)
 
     export_final_results(
-        args, dir, losses, mesh, mlp, network_input, encoded_input, vertices
+        args, dir, mesh, mlp, network_input, encoded_input, vertices, losses
     )
     save_model(mlp, optim, lr_scheduler, losses.pop(), "models/")
 
@@ -603,24 +603,24 @@ def report_process(
 def export_final_results(
     args: argparse.Namespace,
     dir: str,
-    losses: Optional[List[float]],
     mesh: Mesh,
     mlp: NeuralStyleField,
     network_input: torch.Tensor,
     text_encoding: torch.Tensor,
     vertices: torch.Tensor,
+    losses: Optional[List[float]] = None,
 ):
     """Export the final results of the training process.
 
     Args:
         args (argparse.Namespace or dict): Command-line arguments.
         dir (str): Output directory.
-        losses (List[float]): List of loss values. (optional)
         mesh (Mesh): The mesh object being trained on.
         mlp (NeuralStyleField): The trained Multi-Layer Perceptron (MLP) model.
         network_input (torch.Tensor): Input to the MLP for generating predictions.
         text_encoding (torch.Tensor): Encoded text prompt.
         vertices (torch.Tensor): Original vertices of the mesh.
+        losses (Optional[List[float]]): List of loss values.
     """
     # Ensure no gradients are calculated during the export process
     with torch.no_grad():
@@ -653,7 +653,8 @@ def export_final_results(
             save_rendered_results(args, dir, final_color, mesh)
 
         # Save the list of loss values
-        torch.save(torch.tensor(losses), os.path.join(dir, "losses.pt"))
+        if losses is not None:
+            torch.save(torch.tensor(losses), os.path.join(dir, "losses.pt"))
 
 
 def save_rendered_results(
@@ -786,10 +787,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--checkpoint_path",
+        "--model_path",
         type=str,
         default=None,
-        help="Path to the checkpoint file (optional)",
+        help="Path to the model .tar file (optional)",
     )
 
     parser.add_argument(
