@@ -550,7 +550,9 @@ def run_branched(args: argparse.Namespace):
         if epoch % 100 == 0:  # If iteration is a multiple of 100
             report_process(args, dir, epoch, loss, loss_check, losses, rendered_images)
 
-    export_final_results(args, dir, losses, mesh, mlp, network_input, vertices)
+    export_final_results(
+        args, dir, losses, mesh, mlp, network_input, encoded_input, vertices
+    )
     save_model(mlp, optim, lr_scheduler, losses.pop(), "models/")
 
 
@@ -605,6 +607,7 @@ def export_final_results(
     mesh: Mesh,
     mlp: NeuralStyleField,
     network_input: torch.Tensor,
+    text_encoding: torch.Tensor,
     vertices: torch.Tensor,
 ):
     """Export the final results of the training process.
@@ -616,12 +619,13 @@ def export_final_results(
         mesh (Mesh): The mesh object being trained on.
         mlp (NeuralStyleField): The trained Multi-Layer Perceptron (MLP) model.
         network_input (torch.Tensor): Input to the MLP for generating predictions.
+        text_encoding (torch.Tensor): Encoded text prompt.
         vertices (torch.Tensor): Original vertices of the mesh.
     """
     # Ensure no gradients are calculated during the export process
     with torch.no_grad():
         # Get the RGB and normal predictions from the MLP
-        pred_rgb, pred_normal = mlp(network_input)
+        pred_rgb, pred_normal = mlp(network_input, text_encoding)
         pred_rgb = pred_rgb.detach().cpu()
         pred_normal = pred_normal.detach().cpu()
 
