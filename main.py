@@ -3,7 +3,7 @@ import copy
 import os
 import random
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torch
@@ -183,7 +183,7 @@ def run_branched(args: argparse.Namespace):
         args.sigma,
         args.depth,
         args.width,
-        "gaussian",
+        args.encoding,
         args.colordepth,
         args.normdepth,
         args.normratio,
@@ -601,7 +601,7 @@ def report_process(
 def export_final_results(
     args: argparse.Namespace,
     dir: str,
-    losses: List[float],
+    losses: Optional[List[float]],
     mesh: Mesh,
     mlp: NeuralStyleField,
     network_input: torch.Tensor,
@@ -612,7 +612,7 @@ def export_final_results(
     Args:
         args (argparse.Namespace or dict): Command-line arguments.
         dir (str): Output directory.
-        losses (List[float]): List of loss values over the training period.
+        losses (List[float]): List of loss values. (optional)
         mesh (Mesh): The mesh object being trained on.
         mlp (NeuralStyleField): The trained Multi-Layer Perceptron (MLP) model.
         network_input (torch.Tensor): Input to the MLP for generating predictions.

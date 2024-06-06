@@ -1,93 +1,185 @@
-import torch
-import torch.nn as nn
+import argparse
+import os
+
 import clip
-from PIL import Image
 import copy
-import kaolin as kal
+import torch
 
-from main import update_mesh
-from neural_style_field import NeuralStyleField
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-
-def load_checkpoint(filepath):
-    checkpoint = torch.load(filepath)
-    return checkpoint
+from main import export_final_results, update_mesh
+from mesh import Mesh
+from neural_style_field import NeuralStyleField, load_model
+from utils import device
 
 
-# Load the checkpoint
-checkpoint_path = "path/to/your/checkpoint.tar"
-checkpoint = load_checkpoint(checkpoint_path)
+def parse_args():
+    """Parse command line arguments for the script."""
+    parser = argparse.ArgumentParser(
+        description="Mesh Transformation with CLIP and NeuralStyleField"
+    )
 
-# Reinitialize the model
-model = NeuralStyleField(
-    sigma=checkpoint["sigma"],
-    depth=checkpoint["depth"],
-    width=checkpoint["width"],
-    encoding=checkpoint["encoding"],
-    colordepth=checkpoint["colordepth"],
-    normdepth=checkpoint["normdepth"],
-    normratio=checkpoint["normratio"],
-    clamp=checkpoint["clamp"],
-    normclamp=checkpoint["normclamp"],
-    niter=checkpoint["niter"],
-    input_dim=checkpoint["input_dim"],
-    progressive_encoding=checkpoint["progressive_encoding"],
-    exclude=checkpoint["exclude"],
-    text_encoding_dim=512,  # Assuming text_encoding_dim from CLIP is 512
-).to(device)
+    # Input/output settings
+    parser.add_argument(
+        "--prompt", type=str, required=True, help="Text prompt for the model"
+    )
+    parser.add_argument(
+        "--model_path", type=str, required=True, help="Path to the model checkpoint"
+    )
+    parser.add_argument(
+        "--obj_path", type=str, required=True, help="Path to the input OBJ file"
+    )
+    parser.add_argument(
+        "--output_path", type=str, required=True, help="Directory to save the output"
+    )
 
-# Load model state
-model.load_state_dict(checkpoint["model_state_dict"])
+    # CLIP model settings
+    parser.add_argument(
+        "--clipmodel", type=str, default="ViT-B/32", help="CLIP model type"
+    )
+    parser.add_argument(
+        "--jit", action="store_true", help="Use JIT compilation for CLIP model"
+    )
 
-# Reinitialize the optimizer and scheduler
-optimizer = torch.optim.SGD(
-    model.parameters(), lr=0.01
-)  # Adjust as per your optimizer configuration
-optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    # Model hyperparameters
+    parser.add_argument(
+        "--sigma",
+        type=float,
+        required=True,
+        help="Standard deviation for Gaussian Fourier features",
+    )
+    parser.add_argument("--depth", type=int, default=4, help="Depth of the base MLP")
+    parser.add_argument(
+        "--width", type=int, default=256, help="Width of the MLP layers"
+    )
+    parser.add_argument(
+        "--encoding",
+        type=str,
+        default="gaussian",
+        help="Encoding type ('gaussian' or other)",
+    )
+    parser.add_argument(
+        "--colordepth", type=int, default=2, help="Depth of the color branch"
+    )
+    parser.add_argument(
+        "--normdepth", type=int, default=2, help="Depth of the normal branch"
+    )
+    parser.add_argument(
+        "--normratio", type=float, default=0.1, help="Scaling factor for normals"
+    )
+    parser.add_argument(
+        "--clamp",
+        type=str,
+        default="tanh",
+        help="Clamping method for colors ('tanh' or 'clamp')",
+    )
+    parser.add_argument(
+        "--normclamp",
+        type=str,
+        default="tanh",
+        help="Clamping method for normals ('tanh' or 'clamp')",
+    )
+    parser.add_argument(
+        "--niter",
+        type=int,
+        default=6000,
+        help="Number of iterations for progressive encoding",
+    )
+    parser.add_argument(
+        "--input_dim", type=int, default=3, help="Dimensionality of the input"
+    )
+    parser.add_argument(
+        "--no_pe",
+        dest="pe",
+        default=True,
+        action="store_false",
+        help="Do not use positional encoding",
+    )
+    parser.add_argument(
+        "--exclude",
+        type=int,
+        default=0,
+        help="Exclusion parameter for Fourier features",
+    )
 
-lr_scheduler = torch.optim.lr_scheduler.StepLR(
-    optimizer, step_size=100, gamma=0.1
-)  # Adjust as per your scheduler configuration
-if checkpoint["scheduler_state_dict"] is not None:
-    lr_scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+    # Training hyperparameters
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=0.0005,
+        required=False,
+        help="Learning rate for the optimizer",
+    )
+    parser.add_argument(
+        "--decay", type=float, default=0, help="Weight decay for the optimizer"
+    )
 
-# Load the loss (if needed)
-loss = checkpoint["loss"]
-
-# Load the CLIP model
-clip_model, preprocess = clip.load("ViT-B/32", device=device)
-
-# New text prompt
-new_prompt = "A spiky, rough star"
-new_prompt_token = clip.tokenize([new_prompt]).to(device)
-with torch.no_grad():
-    encoded_new_text = clip_model.encode_text(new_prompt_token)
-
-# Prepare the new mesh
-original_mesh = ...  # Load or define your original mesh here
-new_mesh = original_mesh.clone().to(device)
-network_input = copy.deepcopy(new_mesh.vertices).to(device)
-prior_color = torch.full((new_mesh.faces.shape[0], 3, 3), fill_value=0.5).to(device)
-sampled_mesh = new_mesh.clone()
-vertices = copy.deepcopy(new_mesh.vertices).to(device)
-
-# Update the mesh with the new input
-update_mesh(model, network_input, encoded_new_text, prior_color, sampled_mesh, vertices)
+    return parser.parse_args()
 
 
-def render_mesh(mesh, output_path):
-    rendered_images = kal.render(
-        mesh, num_views=1, show=True
-    )  # Adjust parameters as needed
-    # Save the rendered images
-    for i, img in enumerate(rendered_images):
-        img.save(f"{output_path}/rendered_view_{i}.png")
+def load_clip_model(clip_model_name, device, jit=False):
+    """Load the CLIP model."""
+    clip_model, preprocess = clip.load(clip_model_name, device, jit=jit)
+    return clip_model, preprocess
 
 
-# Specify the output path
-output_path = "path/to/output"
+def prepare_text_prompt(prompt, clip_model):
+    """Encode the text prompt using the CLIP model."""
+    prompt_token = clip.tokenize([prompt]).to(device)
+    with torch.no_grad():
+        encoded_text = clip_model.encode_text(prompt_token)
+    return encoded_text
 
-# Render and save the updated mesh
-render_mesh(sampled_mesh, output_path)
+
+def execute():
+    args = parse_args()
+
+    # Load the CLIP model
+    clip_model, preprocess = load_clip_model(args.clipmodel, device, jit=args.jit)
+
+    # Prepare the text prompt
+    encoded_text = prepare_text_prompt(args.prompt, clip_model)
+
+    # Initialize the model
+    model = NeuralStyleField(
+        sigma=args.sigma,
+        depth=args.depth,
+        width=args.width,
+        encoding=args.encoding,
+        colordepth=args.colordepth,
+        normdepth=args.normdepth,
+        normratio=args.normratio,
+        clamp=args.clamp,
+        normclamp=args.normclamp,
+        niter=args.niter,
+        input_dim=args.input_dim,
+        progressive_encoding=args.pe,
+        exclude=args.exclude,
+        text_encoding_dim=512,  # Assuming text_encoding_dim from CLIP is 512
+    ).to(device)
+
+    # Initialize the optimizer
+    optim = torch.optim.Adam(
+        model.parameters(), lr=args.learning_rate, weight_decay=args.decay
+    )
+
+    # Load the mesh
+    mesh = Mesh(args.obj_path)
+
+    # Prepare inputs for the update function
+    vertices = copy.deepcopy(mesh.vertices)  # Copy of the mesh vertices
+    network_input = copy.deepcopy(vertices)  # Copy of vertices for the network input
+    prior_color = torch.full(
+        size=(mesh.faces.shape[0], 3, 3), fill_value=0.5, device=device
+    )
+
+    # Load the model from checkpoint
+    model, optim, _ = load_model(model, optim, args.model_path)
+
+    # Update the mesh with the new input
+    update_mesh(model, network_input, encoded_text, prior_color, mesh, vertices)
+
+    # Export the final results
+    export_final_results(args, args.output_path, mesh, model, network_input, vertices)
+
+
+if __name__ == "__main__":
+    execute()
