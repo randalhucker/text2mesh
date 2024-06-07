@@ -206,7 +206,8 @@ def save_model(
         "loss": loss,
     }
 
-    filename = f"checkpoint_{ datetime.now().strftime('%d%m%Y_%H%M%S') }.pth.tar"
+    # filename = f"checkpoint_{ datetime.now().strftime('%d%m%Y_%H%M%S') }.pth.tar"
+    filename = "checkpoint.pth.tar"
     path = os.path.join(output_dir, filename)
 
     torch.save(save_dict, path)
